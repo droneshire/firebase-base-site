@@ -1,18 +1,12 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import { DocumentSnapshot } from "firebase/firestore";
-import {
-  Typography,
-  FormGroup,
-  FormControlLabel,
-  Divider,
-} from "@mui/material";
+import { Typography, FormGroup, FormControlLabel } from "@mui/material";
 
 import { ClientConfig } from "types/user";
 import {
   EmailInput,
   FirestoreBackedSwitch,
   FirestoreBackedTextField,
-  FirestoreBackedTimeZoneSelect,
 } from "components/utils/forms";
 import { isValidEmail } from "utils/validators";
 const NotificationsTab: FC<{

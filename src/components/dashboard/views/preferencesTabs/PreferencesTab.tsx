@@ -27,28 +27,6 @@ const NotificationsTab: FC<{
             <FirestoreBackedSwitch
               disabled={updatingAnything}
               docSnap={userConfigSnapshot!}
-              fieldPath="preferences.deleteDataOnDownload"
-              checkBox
-            />
-          }
-          label="Delete Data on Download"
-        />
-        <FormControlLabel
-          control={
-            <FirestoreBackedSwitch
-              disabled={updatingAnything}
-              docSnap={userConfigSnapshot!}
-              fieldPath="preferences.storeRawData"
-              checkBox
-            />
-          }
-          label="Store raw data (large files, use with caution)"
-        />
-        <FormControlLabel
-          control={
-            <FirestoreBackedSwitch
-              disabled={updatingAnything}
-              docSnap={userConfigSnapshot!}
               fieldPath="preferences.notifications.email.updatesEnabled"
               checkBox
             />
@@ -57,11 +35,6 @@ const NotificationsTab: FC<{
         />
       </FormGroup>
       <Divider sx={{ marginTop: 2, marginBottom: 4 }} />
-      <FirestoreBackedTimeZoneSelect
-        disabled={updatingAnything}
-        docSnap={userConfigSnapshot!}
-        fieldPath="preferences.searchTimeZone"
-      />
     </>
   );
 };

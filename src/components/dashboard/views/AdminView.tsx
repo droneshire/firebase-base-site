@@ -7,8 +7,12 @@ import { DashboardViewContext } from "components/dashboard/DashboardPage";
 import adminTabsList from "./adminTabs/adminTabsList";
 
 const AdminView: FC = () => {
-  const { userConfigSnapshot, clientsSnapshot, clientsConfigRef } =
-    useOutletContext<DashboardViewContext>();
+  const {
+    userConfigSnapshot,
+    clientsSnapshot,
+    clientsConfigRef,
+    healthMonitorSnapshot,
+  } = useOutletContext<DashboardViewContext>();
 
   const preferences = userConfigSnapshot?.get("preferences");
   const [selectedTabIndex, setSelectedTabIndex] = React.useState(

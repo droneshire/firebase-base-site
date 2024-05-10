@@ -310,7 +310,7 @@ export function FirestoreBackedTimeField<DocType extends object>({
 }
 
 interface FirestoreBackedTimeRangeFieldProps<DocType extends object>
-  extends SingleInputTimeRangeFieldProps<DateRange<Dayjs>> {
+  extends SingleInputTimeRangeFieldProps<Dayjs> {
   docSnap: DocumentSnapshot<DocType>;
   fieldPath: NestedKeyOf<DocType>;
   isValid?: string;
