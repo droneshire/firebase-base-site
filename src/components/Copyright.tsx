@@ -9,7 +9,7 @@ const Copyright: FC<any> = (props: any) => {
       align="center"
       {...props}
     >
-      {"Copyright © University of California Los Angeles "}
+      {"Copyright © Engineered Cash Flow LLC "}
       {new Date().getFullYear()}
       {"."}
     </Typography>

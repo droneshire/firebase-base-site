@@ -92,7 +92,7 @@ const AppBar: FC<AppBarProps> = ({
           noWrap
           sx={{ flexGrow: 1 }}
         >
-          Too Good To Go Monitor
+          TODO: REPLACE ME
         </Typography>
         <IconButton onClick={toggleUserMenu}>
           <Avatar alt="User Account" src={user.photoURL || ""}>
