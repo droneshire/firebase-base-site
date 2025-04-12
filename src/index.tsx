@@ -2,10 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import blue from "@mui/material/colors/blue";
-import blueGrey from "@mui/material/colors/blueGrey";
+import { blue, blueGrey } from "@mui/material/colors";
 
-import "index.css";
+import "./index.css";
 import App from "components/App";
 import { LinkBehavior } from "components/utils/links";
 

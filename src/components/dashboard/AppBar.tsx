@@ -92,7 +92,7 @@ const AppBar: FC<AppBarProps> = ({
           noWrap
           sx={{ flexGrow: 1 }}
         >
-          TODO: REPLACE ME
+          Ticket Arbitrage Monitor
         </Typography>
         <IconButton onClick={toggleUserMenu}>
           <Avatar alt="User Account" src={user.photoURL || ""}>

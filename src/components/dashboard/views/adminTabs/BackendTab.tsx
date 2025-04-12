@@ -30,8 +30,8 @@ export const BackendTab: FC<{
 
   useEffect(() => {
     if (heartbeat) {
-      const now: number = Math.floor(Date.now() / 1000);
-      const newHeartbeat: number = heartbeat?.seconds ?? heartbeatSeconds;
+      const newHeartbeat = heartbeat.seconds;
+      const now = Math.floor(Date.now() / 1000);
       if (now - heartbeatSeconds > timeBetweenHeartbeatSeconds) {
         setHeartbeatString("Offline");
         setHeartbeatColor("grey");
@@ -41,7 +41,7 @@ export const BackendTab: FC<{
       }
       setHeartbeatSeconds(newHeartbeat);
     }
-  }, [heartbeat, heartbeatSeconds, timeBetweenHeartbeatSeconds]);
+  }, [heartbeat, heartbeatSeconds]);
 
   return (
     <>

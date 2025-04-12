@@ -1,32 +1,46 @@
-export type NestedKeyOf<ObjectType extends object> = {
-  [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
-    ? // @ts-ignore
-      `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
-    : `${Key}`;
-}[keyof ObjectType & (string | number)];
+import { FieldPath } from "firebase/firestore";
+
+type RecursiveKeyOf<T> = T extends object ? {
+  [K in keyof T & (string | number)]: K | `${K & string}.${RecursiveKeyOf<T[K]> & string}`
+}[keyof T & (string | number)] : never;
+
+export type NestedKeyOf<ObjectType extends object> = RecursiveKeyOf<ObjectType> | FieldPath;
 
 type NestedData =
   | {
-      [key: string]: any;
+      [key: string]: unknown;
     }
-  | Array<any>;
+  | Array<unknown>;
 
-export function findInNestedDict(data: NestedData, key: string): any {
+function isNestedData(value: unknown): value is NestedData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (Array.isArray(value) || Object.prototype.toString.call(value) === "[object Object]")
+  );
+}
+
+export function findInNestedDict(data: NestedData, key: string): unknown {
   if (typeof data === "object" && !Array.isArray(data)) {
     for (const ikey in data) {
       if (ikey === key) {
         return data[ikey];
       }
-      const result = findInNestedDict(data[ikey], key);
-      if (result !== undefined) {
-        return result;
+      const nestedValue = data[ikey];
+      if (isNestedData(nestedValue)) {
+        const result = findInNestedDict(nestedValue, key);
+        if (result !== undefined) {
+          return result;
+        }
       }
     }
   } else if (Array.isArray(data)) {
     for (const item of data) {
-      const result = findInNestedDict(item, key);
-      if (result !== undefined) {
-        return result;
+      if (isNestedData(item)) {
+        const result = findInNestedDict(item, key);
+        if (result !== undefined) {
+          return result;
+        }
       }
     }
   }

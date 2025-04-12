@@ -57,15 +57,12 @@ export function FirestoreBackedSwitch<DocType extends object>({
   docSnap,
   fieldPath,
   disabled,
-  labelProps,
   checkBox,
   ...props
 }: FirestoreBackedSwitchProps<DocType>) {
   const {
     runAction: update,
     running: updating,
-    error,
-    clearError,
   } = useAsyncAction((enabled: boolean) =>
     updateDoc(docSnap.ref, fieldPath, enabled)
   );
@@ -78,11 +75,6 @@ export function FirestoreBackedSwitch<DocType extends object>({
         onChange={(_, checked) => update(checked)}
         {...props}
       />
-      <Snackbar open={!!error} autoHideDuration={5000} onClose={clearError}>
-        <Alert onClose={clearError} severity="error" sx={{ width: "100%" }}>
-          {`Failed to update: ${error}`}
-        </Alert>
-      </Snackbar>
     </>
   );
 }
@@ -111,8 +103,6 @@ export function FirestoreBackedSlider<DocType extends object>({
   const {
     runAction: update,
     running: updating,
-    error,
-    clearError,
   } = useAsyncAction((value: number) =>
     updateDoc(docSnap.ref, fieldPath, value)
   );
@@ -124,9 +114,9 @@ export function FirestoreBackedSlider<DocType extends object>({
         : storedScaledValue;
       setIndex(updatedIndex);
     }
-  }, [storedScaledValue, updating]);
+  }, [storedScaledValue, updating, props.scale, invertScale]);
 
-  const handleIndexChange = (_: any, newIndex: number | number[]) => {
+  const handleIndexChange = (_: Event, newIndex: number | number[]) => {
     if (Array.isArray(newIndex)) {
       newIndex = newIndex[0];
     }
@@ -135,13 +125,14 @@ export function FirestoreBackedSlider<DocType extends object>({
     }
   };
 
-  const handleValueCommit = (_: any, newIndex: number | number[]) => {
+  const handleValueCommit = (_: Event, newIndex: number | number[]) => {
     if (Array.isArray(newIndex)) {
       newIndex = newIndex[0];
     }
     const scaledValue = props.scale ? props.scale(newIndex) : newIndex;
     update(scaledValue);
   };
+
   return (
     <>
       <Slider
@@ -151,11 +142,6 @@ export function FirestoreBackedSlider<DocType extends object>({
         onChangeCommitted={handleValueCommit}
         {...props}
       />
-      <Snackbar open={!!error} autoHideDuration={5000} onClose={clearError}>
-        <Alert onClose={clearError} severity="error" sx={{ width: "100%" }}>
-          {`Failed to update: ${error}`}
-        </Alert>
-      </Snackbar>
     </>
   );
 }
@@ -219,8 +205,6 @@ export function FirestoreBackedRangeSlider<DocType extends object>({
   const {
     runAction: update,
     running: updating,
-    error,
-    clearError,
   } = useAsyncAction((value: number[]) => {
     if (fieldPathStart) {
       updateDoc(docSnap.ref, fieldPathStart, value[0]);
@@ -246,14 +230,10 @@ export function FirestoreBackedRangeSlider<DocType extends object>({
         onChangeCommitted={(_, value) => update(value as number[])}
         {...props}
       />
-      <Snackbar open={!!error} autoHideDuration={5000} onClose={clearError}>
-        <Alert onClose={clearError} severity="error" sx={{ width: "100%" }}>
-          {`Failed to update: ${error}`}
-        </Alert>
-      </Snackbar>
     </>
   );
 }
+
 interface FirestoreBackedTimeFieldProps<DocType extends object>
   extends TimePickerProps<Dayjs> {
   docSnap: DocumentSnapshot<DocType>;
@@ -261,6 +241,9 @@ interface FirestoreBackedTimeFieldProps<DocType extends object>
   disabled?: boolean;
   label?: string;
 }
+
+const DEFAULT_DATE = dayjs("2022-04-17T6:00");
+
 export function FirestoreBackedTimeField<DocType extends object>({
   docSnap,
   fieldPath,
@@ -268,14 +251,11 @@ export function FirestoreBackedTimeField<DocType extends object>({
   label,
   ...props
 }: FirestoreBackedTimeFieldProps<DocType>) {
-  let mutableDate = dayjs("2022-04-17T6:00");
-  const backedValue = docSnap.get(fieldPath) ?? mutableDate.hour();
-  const [inputValue, setInputValue] = useState(mutableDate.hour(backedValue));
+  const backedValue = docSnap.get(fieldPath) ?? DEFAULT_DATE.hour();
+  const [inputValue, setInputValue] = useState(DEFAULT_DATE.hour(backedValue));
   const {
     runAction: update,
     running: updating,
-    error,
-    clearError,
   } = useAsyncAction((value: number) =>
     updateDoc(docSnap.ref, fieldPath, value)
   );
@@ -289,8 +269,7 @@ export function FirestoreBackedTimeField<DocType extends object>({
 
   useEffect(() => {
     if (!updating) {
-      mutableDate.hour(backedValue);
-      setInputValue(mutableDate);
+      setInputValue(DEFAULT_DATE.hour(backedValue));
     }
   }, [updating, backedValue]);
 
@@ -326,8 +305,6 @@ export function FirestoreBackedTimeRangeField<DocType extends object>({
   const {
     runAction: update,
     running: updating,
-    error: updateError,
-    clearError,
   } = useAsyncAction((value: number[]) =>
     updateDoc(docSnap.ref, fieldPath, value)
   );
@@ -387,15 +364,6 @@ export function FirestoreBackedTimeRangeField<DocType extends object>({
             sx={{ marginBottom: "10px", maxWidth: 300 }}
           />
         </Tooltip>
-        <Snackbar
-          open={!!updateError}
-          autoHideDuration={5000}
-          onClose={clearError}
-        >
-          <Alert onClose={clearError} severity="error" sx={{ width: "100%" }}>
-            {`Failed to update: ${updateError}`}
-          </Alert>
-        </Snackbar>
       </LocalizationProvider>
     </>
   );
@@ -424,119 +392,86 @@ export function FirestoreBackedTextField<DocType extends object>({
   InputProps,
   ...props
 }: FirestoreBackedTextFieldProps<DocType>) {
+  const [value, setValue] = useState(docSnap.get(fieldPath));
   const [editing, setEditing] = useState(false);
-  const backedValue = docSnap.get(fieldPath); // current store value
-  const [inputValue, setInputValue] = useState(backedValue); // current display value
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>();
+  const valid = isValid ? isValid(value) : true;
+  const fieldError = !valid;
+  const fieldHelperText = helperText ? helperText(value, valid) : undefined;
+  const hasUnsavedChanges = value !== docSnap.get(fieldPath);
+
   const {
     runAction: update,
     running: updating,
-    error: updateError,
-    clearError,
   } = useAsyncAction((value: string) =>
     updateDoc(docSnap.ref, fieldPath, value)
   );
-  const previousUpdating = usePrevious(updating);
-  const fieldError = isValid ? !isValid(inputValue) : undefined;
-  const fieldHelperText = helperText
-    ? helperText(inputValue, !fieldError)
-    : undefined;
-  const hasUnsavedChanges = inputValue !== backedValue;
 
   const doUpdate = useCallback(() => {
     if (editing && !fieldError && hasUnsavedChanges) {
-      update(inputValue);
+      update(value);
+      setEditing(false);
     }
-  }, [editing, inputValue, fieldError, update, hasUnsavedChanges]);
-
-  const endAdornment =
-    !hideEditIcon && (editing || updating) ? (
-      <InputAdornment position="end">
-        {updating ? (
-          <CircularProgress size={20} />
-        ) : !hasUnsavedChanges ? (
-          <Tooltip title="changes saved">
-            <CheckCircle color="success" fontSize="small" />
-          </Tooltip>
-        ) : (
-          <Tooltip title="unsaved edits">
-            <Edit color="primary" fontSize="small" />
-          </Tooltip>
-        )}
-      </InputAdornment>
-    ) : undefined;
+  }, [editing, value, fieldError, update, hasUnsavedChanges]);
 
   const doReset = useCallback(() => {
-    setInputValue(backedValue);
-  }, [backedValue]);
+    setValue(docSnap.get(fieldPath));
+    setEditing(false);
+  }, [docSnap, fieldPath]);
 
   const handleActionKey = useCallback(
     ({ key }: KeyboardEvent) => {
-      if (key === "Enter") {
-        doUpdate();
-      } else if (key === "Escape") {
-        doReset();
+      switch (key) {
+        case "Enter":
+          doUpdate();
+          break;
+        case "Escape":
+          doReset();
+          break;
+        default:
+          break;
       }
     },
     [doUpdate, doReset]
   );
 
-  // Handle actions on the input
-  useKeyPress(["Enter", "Escape"], handleActionKey, inputRef);
+  useKeyPress(["Enter", "Escape"], handleActionKey);
 
-  const onFocusOut = useCallback(() => {
-    doUpdate();
-    setEditing(false);
-  }, [doUpdate]);
-
-  useEffect(() => {
-    const currentRef = inputRef.current;
-    if (!currentRef) return;
-    function onFocus() {
-      setEditing(true);
-    }
-    currentRef.addEventListener("focus", onFocus);
-    currentRef.addEventListener("focusout", onFocusOut);
-    return () => {
-      currentRef.removeEventListener("focus", onFocus);
-      currentRef.removeEventListener("focusout", onFocusOut);
-    };
-  }, [inputRef, onFocusOut]);
-
-  // When not editing, ensure that the value is consistent with the backed value
   useEffect(() => {
     if (!editing) {
-      setInputValue(backedValue);
+      setValue(docSnap.get(fieldPath));
     }
-  }, [editing, backedValue]);
-  // after updating, always set the input to the backed value to ensure consistency
-  useEffect(() => {
-    if (!updating && previousUpdating) {
-      setInputValue(backedValue);
-    }
-  }, [updating, previousUpdating, backedValue]);
+  }, [editing, docSnap, fieldPath]);
+
+  const onFocus = useCallback(() => {
+    setEditing(true);
+  }, []);
+
+  const endAdornment = !hideEditIcon && (
+    <InputAdornment position="end">
+      {updating ? (
+        <CircularProgress size={20} />
+      ) : hasUnsavedChanges ? (
+        <Edit />
+      ) : (
+        <CheckCircle />
+      )}
+    </InputAdornment>
+  );
 
   return (
     <>
       <TextField
         inputRef={inputRef}
-        value={inputValue}
+        value={value}
         disabled={disabled || updating}
         error={fieldError}
         helperText={fieldHelperText}
-        onChange={(e) => setInputValue(e.target.value)}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={onFocus}
         InputProps={{ endAdornment, ...InputProps }}
         {...props}
       />
-      <Snackbar
-        open={!!updateError}
-        autoHideDuration={5000}
-        onClose={clearError}
-      >
-        <Alert onClose={clearError} severity="error" sx={{ width: "100%" }}>
-          {`Failed to update: ${updateError}`}
-        </Alert>
-      </Snackbar>
     </>
   );
 }
@@ -554,7 +489,7 @@ export function FirestoreBackedTimeZoneSelect<DocType extends object>({
   docSnap,
   fieldPath,
   disabled,
-  ...props
+  ..._props
 }: FirestoreBackedTimeZoneProps<DocType>) {
   const defaultTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const savedValue = docSnap.get(fieldPath) ?? defaultTimeZone;

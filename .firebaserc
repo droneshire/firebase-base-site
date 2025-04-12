@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "firebase-base-site"
+    "default": "tm-bot-frontend"
   }
 }

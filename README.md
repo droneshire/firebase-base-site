@@ -21,6 +21,7 @@ Initialize the project with the following settings:
 - Github actions setup and hosting enabled
 - Firestore database plus rules enabled
 - Firebase storage enabled plus rules
+- Dataconnect for sql database (if desired)
 
 Follow the defaults during this setup as they ask.
 
@@ -37,5 +38,5 @@ npm install
 6. Start the development server
 
 ```
-npm start run
+npm start dev
 ```

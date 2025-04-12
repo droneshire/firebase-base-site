@@ -14,7 +14,7 @@ service firebase.storage {
 
     // Rules to ensure that only admins can read/write everything
     match /{allPaths=**} {
-      allow read, write: if isAdmin();
+      allow read, write: if isAdmin(request);
     }
   }
 }

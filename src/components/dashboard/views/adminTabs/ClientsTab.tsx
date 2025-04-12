@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import {
   doc,
   setDoc,
@@ -149,9 +149,6 @@ const NewClientModal: FC<ClientModalProps> = ({
     clearError,
   } = useAsyncAction(createClient);
 
-  // need to check if the userId is in the existinguserIds which is a list of ClientSpec
-  // and if the userId is a valid email
-
   const validuserId =
     userId &&
     !existinguserIds.some((userSpec) => userId === userSpec.userId) &&
@@ -192,25 +189,31 @@ const NewClientModal: FC<ClientModalProps> = ({
   );
   useKeyPress(["Enter", "Escape"], keyHander);
 
+  const modalBoxStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: 400,
+    bgcolor: "background.paper",
+    borderRadius: 1,
+    boxShadow: 24,
+    p: 4,
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  } as const;
+
+  if (!open) {
+    return null;
+  }
+
   return (
     <>
       <Modal open={open} onClose={onClose}>
         <Box
           ref={modalRef}
-          sx={{
-            position: "absolute" as "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            borderRadius: 1,
-            boxShadow: 24,
-            p: 4,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
+          sx={modalBoxStyle}
         >
           <Typography variant="h5" component="h2" textAlign="center">
             New Client
@@ -253,89 +256,71 @@ const NewClientModal: FC<ClientModalProps> = ({
   );
 };
 
-const ClientsTab: FC<{
+export const ClientsTab: FC<{
   clientsSnapshot: QuerySnapshot<ClientConfig>;
   clientsConfigRef: CollectionReference<ClientConfig>;
   healthMonitorSnapshot: DocumentSnapshot<HealthMonitorConfig>;
 }> = ({ clientsSnapshot, clientsConfigRef }) => {
-  const clients = clientsSnapshot?.docs;
-  const [modalOpen, setModalOpen] = React.useState(false);
-  const [actionClientId, setActionClientId] = React.useState("");
-  const [clientAction, setClientAction] = React.useState<ClientAction>(
-    ClientAction.NONE
-  );
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
 
-  if (!clients) {
-    return <CircularProgress />;
-  }
+  const memoizedClients = React.useMemo(() => {
+    return clientsSnapshot.docs.map((doc) => ({
+      userId: doc.id,
+    }));
+  }, [clientsSnapshot]);
 
-  const existinguserIds: ClientSpec[] = React.useMemo(
-    () =>
-      (clients || {}).map((client) => ({
-        userId: client.id,
-      })),
-    [clients]
-  );
-  React.useEffect(() => {
-    if (actionClientId) {
-      if (clientAction === ClientAction.DELETE) {
-        deleteDoc(doc(clientsConfigRef, actionClientId));
-      } else if (clientAction === ClientAction.ADD) {
-        const default_new_user: ClientConfig = { ...DEFAULT_USER_CONFIG };
-        default_new_user.preferences.notifications.email.email = actionClientId;
-        setDoc(doc(clientsConfigRef, actionClientId), default_new_user);
-      }
+  const handleCreateClient = async (client: ClientSpec): Promise<void> => {
+    try {
+      await setDoc(doc(clientsConfigRef, client.userId), {
+        ...DEFAULT_USER_CONFIG,
+      });
+    } catch (error) {
+      console.error("Error creating client:", error);
+      throw error;
     }
-  }, [clientAction, actionClientId, clientsConfigRef]);
+  };
+
+  const handleDeleteClient = async (userId: string) => {
+    try {
+      await deleteDoc(doc(clientsConfigRef, userId));
+    } catch (error) {
+      console.error("Error deleting client:", error);
+    }
+  };
 
   return (
-    <>
-      <Box alignItems="center">
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "baseline",
-            gap: 2,
-          }}
-        >
-          <PersonIcon />
-          <Typography sx={{ mt: 4, mb: 2 }} variant="h6" component="div">
-            Clients
-          </Typography>
-        </Box>
-        <ClientActivityGroup
-          users={existinguserIds}
-          actionButtons={[
-            {
-              doAction: (userId: string) => {
-                setActionClientId(userId);
-                setClientAction(ClientAction.DELETE);
-              },
-              title: (userId: string) => `Delete user ${userId}`,
-              ActionIcon: DeleteIcon,
-            },
-          ]}
-        />
-      </Box>
-      <Box textAlign="right" sx={{ marginTop: 2 }}>
-        <Tooltip title="Add user">
-          <Fab color="primary" onClick={() => setModalOpen(true)}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <Tooltip title="Add new client">
+          <Fab
+            color="primary"
+            variant="extended"
+            onClick={() => setShowNewClientModal(true)}
+          >
             <AddIcon />
+            Add Client
           </Fab>
         </Tooltip>
       </Box>
-      <NewClientModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        existinguserIds={existinguserIds}
-        createClient={(ClientProps) => {
-          const { userId } = ClientProps;
-          setActionClientId(userId);
-          setClientAction(ClientAction.ADD);
-        }}
+
+      <ClientActivityGroup
+        users={memoizedClients}
+        actionButtons={[
+          {
+            doAction: handleDeleteClient,
+            ActionIcon: DeleteIcon,
+            title: (userId) => `Delete ${userId}`,
+          },
+        ]}
       />
-    </>
+
+      <NewClientModal
+        open={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        createClient={handleCreateClient}
+        existinguserIds={memoizedClients}
+      />
+    </Box>
   );
 };
 

@@ -1,5 +1,5 @@
-import React, { FC } from "react";
-import { useLocation, Navigate } from "react-router-dom";
+import React, { FC } from 'react';
+import { useLocation, Navigate } from 'react-router-dom';
 import {
   Avatar,
   Box,
@@ -9,12 +9,12 @@ import {
   CssBaseline,
   TextField,
   Typography,
-} from "@mui/material";
-import Copyright from "components/Copyright";
-import LockOpenIcon from "@mui/icons-material/LockOpen";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+} from '@mui/material';
+import Copyright from 'components/Copyright';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
-import { sendPasswordReset } from "hooks/firebase/auth";
+import { sendPasswordReset } from 'hooks/firebase/auth';
 
 interface LoginButtonProps extends ChipProps {
   clickHandler: () => void;
@@ -25,7 +25,7 @@ const ResetPasswordButton: FC<LoginButtonProps> = ({
 }) => <Chip onClick={clickHandler} {...props} />;
 
 const ForgotPassword: React.FC = () => {
-  const [resetEmail, setResetEmail] = React.useState("");
+  const [resetEmail, setResetEmail] = React.useState('');
   const [didResetPassword, setDidResetPassword] = React.useState(false);
   const location = useLocation();
 
@@ -46,12 +46,12 @@ const ForgotPassword: React.FC = () => {
       <Box
         sx={{
           marginTop: 8,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
           <LockOutlinedIcon />
         </Avatar>
         <Typography component="h1" variant="h5">
@@ -69,18 +69,18 @@ const ForgotPassword: React.FC = () => {
             onChange={handleEmailChange}
           />
         </Box>
-        <Box sx={{ alignSelf: "center" }}>
+        <Box sx={{ alignSelf: 'center' }}>
           <ResetPasswordButton
             clickHandler={handleResetPassword}
             icon={<LockOpenIcon />}
             label="Reset Password"
-            sx={{ marginBottom: 2, alignSelf: "center" }}
+            sx={{ marginBottom: 2, alignSelf: 'center' }}
           />
         </Box>
       </Box>
       <Copyright sx={{ mt: 5 }} />
       {didResetPassword && (
-        <Navigate to={(location.state as any)?.from?.pathname || "/"} replace />
+        <Navigate to={(location.state as any)?.from?.pathname || '/'} replace />
       )}
     </Container>
   );

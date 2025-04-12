@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -7,8 +7,8 @@ import {
   DialogContentText,
   DialogTitle,
   TextField,
-} from "@mui/material";
-import { Link } from "react-router-dom";
+} from '@mui/material';
+import { Link } from 'react-router-dom';
 
 interface LoginModalProps {
   open: boolean;
@@ -23,8 +23,8 @@ const EmailLoginModal: React.FC<LoginModalProps> = ({
   onLogin,
   onRegister,
 }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);

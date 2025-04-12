@@ -8,13 +8,11 @@ import adminTabsList from "./adminTabs/adminTabsList";
 
 const AdminView: FC = () => {
   const {
-    userConfigSnapshot,
     clientsSnapshot,
     clientsConfigRef,
     healthMonitorSnapshot,
   } = useOutletContext<DashboardViewContext>();
 
-  const preferences = userConfigSnapshot?.get("preferences");
   const [selectedTabIndex, setSelectedTabIndex] = React.useState(
     adminTabsList[0].key
   );
@@ -35,7 +33,7 @@ const AdminView: FC = () => {
         </Box>
         {adminTabsList.map(({ key, component: C }) => {
           return (
-            <TabPanel selectedTabIndex={selectedTabIndex} index={key} key={key}>
+            <TabPanel value={selectedTabIndex} tabIndex={key} key={key}>
               <C
                 clientsSnapshot={clientsSnapshot!}
                 clientsConfigRef={clientsConfigRef!}
