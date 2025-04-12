@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { DocumentSnapshot, updateDoc } from "firebase/firestore";
+import { DocumentSnapshot, updateDoc, FieldPath } from "firebase/firestore";
 import TimezoneSelect, { Props as TimeZoneProps } from "react-timezone-select";
 import {
   Switch,
-  Snackbar,
-  Alert,
   SwitchProps,
   Checkbox,
+  CheckboxProps,
   FormControlLabelProps,
   TextField,
   TextFieldProps,
@@ -44,45 +43,62 @@ import {
 import { NestedKeyOf } from "utils/generics";
 import shallowEqual from "utils/comparisons";
 
-interface FirestoreBackedSwitchProps<DocType extends object>
-  extends SwitchProps {
+interface FirestoreBackedSwitchProps<DocType extends object> {
   docSnap: DocumentSnapshot<DocType>;
-  fieldPath: NestedKeyOf<DocType>;
-  labelProps?: Omit<FormControlLabelProps, "control">;
-  checkBox?: boolean;
+  fieldPath: string | FieldPath;
+  disabled?: boolean;
 }
 
-// Switch that disables while updating and alerts/logs any errors
 export function FirestoreBackedSwitch<DocType extends object>({
   docSnap,
   fieldPath,
   disabled,
-  checkBox,
   ...props
-}: FirestoreBackedSwitchProps<DocType>) {
+}: FirestoreBackedSwitchProps<DocType> & SwitchProps) {
   const {
     runAction: update,
     running: updating,
   } = useAsyncAction((enabled: boolean) =>
     updateDoc(docSnap.ref, fieldPath, enabled)
   );
-  const C = checkBox ? Checkbox : Switch;
+
   return (
-    <>
-      <C
-        checked={docSnap.get(fieldPath)}
-        disabled={disabled || updating}
-        onChange={(_, checked) => update(checked)}
-        {...props}
-      />
-    </>
+    <Switch
+      checked={docSnap.get(fieldPath)}
+      disabled={disabled || updating}
+      onChange={(_, checked) => update(checked)}
+      {...props}
+    />
+  );
+}
+
+export function FirestoreBackedCheckbox<DocType extends object>({
+  docSnap,
+  fieldPath,
+  disabled,
+  ...props
+}: FirestoreBackedSwitchProps<DocType> & CheckboxProps) {
+  const {
+    runAction: update,
+    running: updating,
+  } = useAsyncAction((enabled: boolean) =>
+    updateDoc(docSnap.ref, fieldPath, enabled)
+  );
+
+  return (
+    <Checkbox
+      checked={docSnap.get(fieldPath)}
+      disabled={disabled || updating}
+      onChange={(_, checked) => update(checked)}
+      {...props}
+    />
   );
 }
 
 interface FirestoreBackedSliderProps<DocType extends object>
   extends SliderProps {
   docSnap: DocumentSnapshot<DocType>;
-  fieldPath: NestedKeyOf<DocType>;
+  fieldPath: string | FieldPath;
   invertScale: (value: number) => number;
 }
 
@@ -116,7 +132,7 @@ export function FirestoreBackedSlider<DocType extends object>({
     }
   }, [storedScaledValue, updating, props.scale, invertScale]);
 
-  const handleIndexChange = (_: Event, newIndex: number | number[]) => {
+  const handleIndexChange = (event: Event | React.SyntheticEvent<Element, Event>, newIndex: number | number[], activeThumb: number) => {
     if (Array.isArray(newIndex)) {
       newIndex = newIndex[0];
     }
@@ -125,11 +141,11 @@ export function FirestoreBackedSlider<DocType extends object>({
     }
   };
 
-  const handleValueCommit = (_: Event, newIndex: number | number[]) => {
-    if (Array.isArray(newIndex)) {
-      newIndex = newIndex[0];
+  const handleValueCommit = (event: Event | React.SyntheticEvent<Element, Event>, value: number | number[]) => {
+    if (Array.isArray(value)) {
+      value = value[0];
     }
-    const scaledValue = props.scale ? props.scale(newIndex) : newIndex;
+    const scaledValue = props.scale ? props.scale(value) : value;
     update(scaledValue);
   };
 
@@ -148,7 +164,7 @@ export function FirestoreBackedSlider<DocType extends object>({
 
 interface FirestoreBackedRangeSliderProps<DocType extends object>
   extends FirestoreBackedSliderProps<DocType> {
-  fieldPathStart?: NestedKeyOf<DocType>;
+  fieldPathStart?: string | FieldPath;
   minDistance?: number;
 }
 export function FirestoreBackedRangeSlider<DocType extends object>({
@@ -237,7 +253,7 @@ export function FirestoreBackedRangeSlider<DocType extends object>({
 interface FirestoreBackedTimeFieldProps<DocType extends object>
   extends TimePickerProps<Dayjs> {
   docSnap: DocumentSnapshot<DocType>;
-  fieldPath: NestedKeyOf<DocType>;
+  fieldPath: string | FieldPath;
   disabled?: boolean;
   label?: string;
 }
@@ -291,7 +307,7 @@ export function FirestoreBackedTimeField<DocType extends object>({
 interface FirestoreBackedTimeRangeFieldProps<DocType extends object>
   extends SingleInputTimeRangeFieldProps<Dayjs> {
   docSnap: DocumentSnapshot<DocType>;
-  fieldPath: NestedKeyOf<DocType>;
+  fieldPath: string | FieldPath;
   isValid?: string;
 }
 
@@ -374,7 +390,7 @@ type FirestoreBackedTextFieldProps<DocType extends object> = Omit<
   "error" | "helperText"
 > & {
   docSnap: DocumentSnapshot<DocType>;
-  fieldPath: NestedKeyOf<DocType>;
+  fieldPath: string | FieldPath;
   isValid?: (value: string) => boolean;
   helperText?: (value: string, isValid: boolean) => string | undefined;
   hideEditIcon?: boolean;
@@ -394,7 +410,7 @@ export function FirestoreBackedTextField<DocType extends object>({
 }: FirestoreBackedTextFieldProps<DocType>) {
   const [value, setValue] = useState(docSnap.get(fieldPath));
   const [editing, setEditing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>();
+  const inputRef = useRef<HTMLInputElement>(null);
   const valid = isValid ? isValid(value) : true;
   const fieldError = !valid;
   const fieldHelperText = helperText ? helperText(value, valid) : undefined;
@@ -481,7 +497,7 @@ type FirestoreBackedTimeZoneProps<DocType extends object> = Omit<
   "value"
 > & {
   docSnap: DocumentSnapshot<DocType>;
-  fieldPath: NestedKeyOf<DocType>;
+  fieldPath: string | FieldPath;
   disabled: boolean;
 };
 

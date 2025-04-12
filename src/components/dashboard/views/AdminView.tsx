@@ -33,7 +33,7 @@ const AdminView: FC = () => {
         </Box>
         {adminTabsList.map(({ key, component: C }) => {
           return (
-            <TabPanel value={selectedTabIndex} tabIndex={key} key={key}>
+            <TabPanel key={key} selectedTabIndex={selectedTabIndex} index={key}>
               <C
                 clientsSnapshot={clientsSnapshot!}
                 clientsConfigRef={clientsConfigRef!}

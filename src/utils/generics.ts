@@ -4,7 +4,7 @@ type RecursiveKeyOf<T> = T extends object ? {
   [K in keyof T & (string | number)]: K | `${K & string}.${RecursiveKeyOf<T[K]> & string}`
 }[keyof T & (string | number)] : never;
 
-export type NestedKeyOf<ObjectType extends object> = RecursiveKeyOf<ObjectType> | FieldPath;
+export type NestedKeyOf<ObjectType extends object> = Extract<RecursiveKeyOf<ObjectType>, string> | FieldPath;
 
 type NestedData =
   | {
